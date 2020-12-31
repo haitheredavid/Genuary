@@ -1,14 +1,8 @@
-using System;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Toolkit.Ui {
     public class UICellRender : Graphic {
-
-        // TODO Look into moving quads into textures
-        // TODO Mouse over function for each quad
-        // TODO Animate gradient coloring 
 
         public UIGridRenderer grid;
         public Gradient gradient;
