@@ -27,6 +27,8 @@ public static class GraphLibrary {
         SineFunction, Sine2DFunction, MultiSineFunction, MultiSineFunction2D, RippleFunction, UVSphereFunction, UVRippleSphereFunction, UVTwistedSphereFunction, TorusFunction
     };
 
+    public static int GetFunctionCount => Functions.Length;
+    
     public static GraphName GetNextFunctionName( GraphName name )
         {
             return (int) name < Functions.Length - 1
@@ -119,7 +121,7 @@ public static class GraphLibrary {
     public static float3 UVTwistedSphereFunction( float u, float v, float t )
         {
             var p = new float3( );
-            var r = 0.9f + 0.1f * Sin( Pi * ( 6f * u + 6f * v + t ) );
+            var r = 0.9f + 0.1f * Sin( Pi * ( 12f * u + 8f * v + t ) );
             var s = r * Cos( 0.5f * Pi * v );
 
             p.x = s * Sin( Pi * u );
@@ -132,8 +134,8 @@ public static class GraphLibrary {
     public static float3 TorusFunction( float u, float v, float t )
         {
             var p = new float3( );
-            var r1 = 0.7f + 0.1f * Sin( Pi * ( 6f * u + 0.5f * t ) );
-            var r2 = 0.15f + 0.05f * Sin( Pi * ( 8f * u + 4f * v + 2f * t ) );
+            var r1 = 0.7f + 0.1f * Sin( Pi * ( 8f * u + 0.5f * t ) );
+            var r2 = 0.15f + 0.05f * Sin( Pi * ( 16f * u + 8f * v + 3f * t ) );
             var s = r1 + r2 * Cos( Pi * v );
 
             p.x = s * Sin( Pi * u );

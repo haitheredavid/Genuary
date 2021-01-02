@@ -2,7 +2,8 @@
 using UnityEngine;
 
 public class GraphGPU : MonoBehaviour {
-	[SerializeField,Range(10,1000)]
+
+	[SerializeField,Range(10,MaxRes)]
 	private int resolution = 10;
 	[SerializeField]
 	private GraphName function;
@@ -17,9 +18,13 @@ public class GraphGPU : MonoBehaviour {
 	[SerializeField]
 	private Mesh mesh = default;
 
+	private const int MaxRes = 1000;
+
 	public enum TransitionMode {
+
 		Cycle,
 		Random
+
 	}
 
 	private float _duration;
@@ -32,7 +37,8 @@ public class GraphGPU : MonoBehaviour {
 		PositionId = Shader.PropertyToID("_Positions"),
 		ResolutionId = Shader.PropertyToID("_Resolution"),
 		StepId = Shader.PropertyToID("_Step"),
-		TimeId = Shader.PropertyToID("_Time");
+		TimeId = Shader.PropertyToID("_Time"),
+		TransitionId = Shader.PropertyToID("_TransitionProgress");
 
 	private void UpdateFunctionOnGPU(){
 		float step = 2f / resolution;
@@ -40,15 +46,20 @@ public class GraphGPU : MonoBehaviour {
 		computeShader.SetFloat(StepId,step);
 		computeShader.SetFloat(TimeId,Time.time);
 
-		computeShader.SetBuffer(0,PositionId,_positionBuffer);
+		if(_transitioning){
+			computeShader.SetFloat(TransitionId,Mathf.SmoothStep(0f,1f,_duration / transitionDuration));
+		}
+		var kernelIndex = (int)function + (int)(_transitioning ? _transitionFunction : function) * GraphLibrary.GetFunctionCount;
+		computeShader.SetBuffer(kernelIndex,PositionId,_positionBuffer);
+
 		int groups = Mathf.CeilToInt(resolution / 8f);
-		computeShader.Dispatch(0,groups,groups,1);
+		computeShader.Dispatch(kernelIndex,groups,groups,1);
 
 		material.SetBuffer(PositionId,_positionBuffer);
 		material.SetFloat(StepId,step);
 
 		var bounds = new Bounds(Vector3.zero,Vector3.one * (2f + 2f / resolution));
-		Graphics.DrawMeshInstancedProcedural(mesh,0,material,bounds,_positionBuffer.count);
+		Graphics.DrawMeshInstancedProcedural(mesh,0,material,bounds,resolution * resolution);
 	}
 
 	private void PickNextFunction(){
@@ -61,7 +72,7 @@ public class GraphGPU : MonoBehaviour {
 	// With any change during play mode it will disappear
 	private void OnEnable(){
 		var memorySize = 3 * 4;
-		var bufferSize = resolution * resolution;
+		var bufferSize = MaxRes * MaxRes;
 		_positionBuffer = new ComputeBuffer(bufferSize,memorySize);
 	}
 

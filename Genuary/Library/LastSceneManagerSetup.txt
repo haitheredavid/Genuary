@@ -1,5 +1,5 @@
 sceneSetups:
-- path: Assets/myScenes/SampleScene.unity
+- path: Assets/mySketches/01.TripleNestedLoops/01.TripleNest.unity
   isLoaded: 1
   isActive: 1
   isSubScene: 0
