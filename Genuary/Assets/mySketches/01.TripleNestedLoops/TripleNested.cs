@@ -1,166 +1,103 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
-[ExecuteAlways]
+
 public class TripleNested : MonoBehaviour {
 
-	// draw box
-	// divide box
-	// divide box again 
 
-	[SerializeField,Range(1,10)] private float size = 1f;
-	[SerializeField,Range(1,10)] private int treeCount = 1;
-	[SerializeField,Range(1,10)] private int branches = 1;
-	[SerializeField,Range(1,10)] private int stems = 1;
+	[SerializeField] private GameObject obj;
+	[SerializeField] private bool generate = false;
+	[SerializeField , Range(0.0f , 10.0f)] private float size = 1f;
+	[SerializeField , Range(1.0f , 10.0f)] private float transitionDuration = 1f;
+	[SerializeField , Range(1 , 50)] private int xCount = 1 , yCount = 1 , zCount = 1;
 
-	private List<Vector3> _points = new List<Vector3>();
-	private List<Tree> _trees = new List<Tree>();
+	private List<GameObject> _objects = new List<GameObject>();
 
-
-	private void CreateTreeMap(float min,float max){
+	private float _duration;
+	private bool _transitioning;
 
 
-		var botLeft = new Vector3(min,min);
-		var topLeft = new Vector3(min,min + max);
-		var topRight = new Vector3(min + max,min + max);
-		var botRight = new Vector3(min + max,min);
+	private void CreateGrid(){
 
-
-		var treeSize = 0f;
-		_trees = new List<Tree>();
-		for (int i = 0; i < treeCount; i++){
-			treeSize += max / (treeCount + 1);
-			var treeStart = new Vector3(botLeft.x + treeSize,botLeft.y);
-			var treeEnd = new Vector3(topLeft.x + treeSize,topLeft.y);
-			var tree = new Tree(treeStart,treeEnd);
-
-
-			var branchCount = Random.Range(0,branches);
-			if(branchCount > 0){
-				var treeBranches = new List<Branch>();
-				var branchDis = 0f;
-				for (int b = 0; b < branchCount; b++){
-					branchDis += treeSize / (branchCount + 1);
-
-					var branchStart = new Vector3(
-						treeStart.x,
-						treeStart.y + branchDis
-					);
-					var branchEnd = new Vector3(
-						treeEnd.x,
-						treeEnd.y + branchDis
-					);
-					var branch = new Branch(branchStart,branchEnd);
-					treeBranches.Add(branch);
-				}
-				tree.branches = treeBranches;
+		if(_objects != null && _objects.Count > 0){
+			foreach (var t in _objects){
+				Destroy(t.gameObject);
 			}
+		}
 
-			_trees.Add(tree);
+		if (obj == null) return;
 
+
+		_objects = new List<GameObject>();
+		var totalCount = xCount * yCount * zCount;
+
+		for (int i = 0; i < totalCount; i++){
+			var prefab = Instantiate(obj , transform);
+			prefab.name = $"grid { i }";
+			_objects.Add(prefab);
 		}
 
 	}
 
+	private void Awake(){
+		_reverse = false;
+		_duration = 0f;
+	}
+
+	private bool _reverse;
+	private void Update(){
+
+		if (_duration >= transitionDuration) {
+			_reverse = true;
+		} else if(_duration <= 0f){
+			_reverse = false;
+		}
+
+		if(_reverse){
+			_duration -= Time.deltaTime;
+		} else{
+			_duration += Time.deltaTime;
+		}
 
 
-	public void OnDrawGizmos(){
+		var totalCount = xCount * yCount * zCount;
 
-		var min = 0;
-		var max = size;
+		if(_objects == null || _objects.Count != totalCount ){
+			CreateGrid();
 
-		var botLeft = new Vector3(min,min);
-		var topLeft = new Vector3(min,min + max);
-		var topRight = new Vector3(min + max,min + max);
-		var botRight = new Vector3(min + max,min);
+		}
+		UpdateGrid();
+	}
 
-		Gizmos.color = Color.black;
-		Gizmos.DrawLine(botLeft,topLeft);
+	private void UpdateGrid(){
 
-		Gizmos.color = Color.red;
-		Gizmos.DrawLine(topLeft,topRight);
+		var totalCount = xCount * yCount * zCount;
+		var maxSize = Vector3.one * size;
+		var minSize = Vector3.one * 0.01f;
+		var progress = _duration / transitionDuration;
 
-		Gizmos.color = Color.green;
-		Gizmos.DrawLine(topRight,botRight);
+		var index = 0;
+		for (int x = 0; x < xCount; x++){
+			var xPos = x * size;
+			for (int y = 0; y < yCount; y++){
+				var yPos =  y * size;
+				for (int z = 0; z < zCount; z++ , index++){
+					var zPos =  z * size;
 
-		Gizmos.color = Color.grey;
-		Gizmos.DrawLine(botRight,botLeft);
+					var weight = Mathf.Clamp01((float)(x * y * z) / totalCount + progress);
+					var center = new Vector3(xPos , yPos , zPos);
 
-		CreateTreeMap(min,max);
-
-		foreach (var tree in _trees){
-
-			Gizmos.color = Color.cyan;
-			Gizmos.DrawLine(tree.segment.startPoint,tree.segment.endPoint);
-			if(tree.branches != null && tree.branches.Count > 0){
-				foreach (var branch in tree.branches){
-					Gizmos.color = Color.yellow;
-					Gizmos.DrawLine(branch.segment.startPoint,branch.segment.endPoint);
+					var item = _objects[index];
+					item.transform.position = center;
+					item.transform.localScale = Vector3.Lerp(minSize , maxSize , weight);
+					item.GetComponent<MeshRenderer>().material.color =  Color.Lerp(Color.yellow , Color.red , weight);
 
 				}
 			}
 		}
-		// var dis = 0f;
-		// _points = new List<Vector3>();
-		// for (int i = 0; i < treeCount; i++){
-		// 	dis += max / (treeCount + 1);
-		// 	var startPoint = new Vector3(botLeft.x + dis,botLeft.y);
-		// 	var endPoint = new Vector3(topLeft.x + dis,topLeft.y);
-		//
-		// 	_points.Add(startPoint);
-		// 	_points.Add(endPoint);
-		// }
-		//
-		// for (var i = 0; i < _points.Count - 1; i++){
-		//
-		// 	var startPoint = _points[i];
-		// 	var endPoint = _points[i + 1];
-		// 	Gizmos.color = Color.cyan;
-		// 	Gizmos.DrawLine(startPoint,endPoint);
-		// 	i++;
-		// }
-
 	}
 
-	private struct Tree {
-
-		public Segment segment;
-		public List<Branch> branches;
-
-		public Tree(Vector3 startPoint,Vector3 endPoint){
-			segment = new Segment(startPoint,endPoint);
-			branches = new List<Branch>();
-		}
-
-	}
-
-
-	private struct Branch {
-
-		public Segment segment;
-		public List<Segment> stems;
-
-		public Branch(Vector3 startPoint,Vector3 endPoint){
-			segment = new Segment(startPoint,endPoint);
-			stems = new List<Segment>();
-		}
-
-	}
-
-	private struct Segment {
-
-		public Vector3 startPoint;
-		public Vector3 endPoint;
-
-		public Segment(Vector3 startPoint,Vector3 endPoint){
-			this.startPoint = startPoint;
-			this.endPoint = endPoint;
-		}
-
-	}
 
 
 }

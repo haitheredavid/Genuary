@@ -1,5 +1,5 @@
 sceneSetups:
-- path: Assets/mySketches/01.TripleNestedLoops/01.TripleNest.unity
+- path: Assets/myScenes/Fractals.unity
   isLoaded: 1
   isActive: 1
   isSubScene: 0
